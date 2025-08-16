@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 780" width="1200" height="780" role="img" aria-labelledby="title desc">
+  <title id="title">Saga Pattern Flow - Orchestration with Azure Service Bus</title>
+  <desc id="desc">Order -> Payment (success or failure) -> Shipping -> Completed with compensation on failure. Orchestrated via Azure Service Bus. State persisted in OrderSagaService/SagaDbContext.</desc>
+
+  <defs>
+    <linearGradient id="gradBus" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0%" stop-color="#4f9efb"/>
+      <stop offset="100%" stop-color="#2a69cb"/>
+    </linearGradient>
+    <linearGradient id="gradSuccess" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#15c87f"/>
+      <stop offset="100%" stop-color="#0aa360"/>
+    </linearGradient>
+    <linearGradient id="gradWarn" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#f7b733"/>
+      <stop offset="100%" stop-color="#f57c00"/>
+    </linearGradient>
+    <linearGradient id="gradDanger" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#ff6b6b"/>
+      <stop offset="100%" stop-color="#e53935"/>
+    </linearGradient>
+    <linearGradient id="gradStore" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#b388ff"/>
+      <stop offset="100%" stop-color="#7e57c2"/>
+    </linearGradient>
+
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#4a4a4a"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#0aa360"/>
+    </marker>
+    <marker id="arrowRed" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#e53935"/>
+    </marker>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.15"/>
+    </filter>
+    <style>
+      .label { font: 600 16px 'Segoe UI', Tahoma, sans-serif; fill: #1a1a1a; }
+      .sub { font: 500 13px 'Segoe UI', Tahoma, sans-serif; fill: #233; opacity: .9; }
+      .muted { font: 12px 'Segoe UI', Tahoma, sans-serif; fill: #555; }
+      .legend { font: 12px 'Segoe UI', Tahoma, sans-serif; fill: #333; }
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="1200" height="780" fill="#f7f9fc"/>
+  <text x="32" y="40" class="label" font-size="22">Saga Orchestration Flow (Azure Service Bus)</text>
+  <text x="32" y="64" class="muted">Order ▶ Payment ▶ Shipping with compensation on failure; state persisted via EF Core</text>
+
+  <g transform="translate(900,24)" filter="url(#shadow)">
+    <rect x="0" y="0" rx="8" ry="8" width="280" height="110" fill="#fff" stroke="#e2e8f0"/>
+    <rect x="16" y="16" width="18" height="18" rx="4" fill="url(#gradWarn)"/>
+    <text x="40" y="30" class="legend">Processing step (Handlers)</text>
+    <rect x="16" y="44" width="18" height="18" rx="4" fill="url(#gradSuccess)"/>
+    <text x="40" y="58" class="legend">Success path / Terminal state</text>
+    <rect x="16" y="72" width="18" height="18" rx="4" fill="url(#gradDanger)"/>
+    <text x="40" y="86" class="legend">Compensation / Failure path</text>
+  </g>
+
+  <g transform="translate(460,120)" filter="url(#shadow)">
+    <rect x="0" y="0" rx="12" ry="12" width="280" height="90" fill="url(#gradBus)"/>
+    <text x="20" y="36" font-size="18" font-weight="700" fill="#fff">Azure Service Bus</text>
+    <text x="20" y="62" class="sub" fill="#eaf2ff">Queues: orders, payments</text>
+  </g>
+
+  <g transform="translate(80,130)" filter="url(#shadow)">
+    <rect x="0" y="0" rx="12" ry="12" width="260" height="70" fill="url(#gradSuccess)"/>
+    <text x="20" y="30" class="label" fill="#fff">Order Created</text>
+    <text x="20" y="52" class="sub" fill="#e9fff5">Publish OrderCreated</text>
+  </g>
+
+  <g transform="translate(180,300)" filter="url(#shadow)">
+    <rect x="0" y="0" rx="12" ry="12" width="300" height="80" fill="url(#gradWarn)"/>
+    <text x="20" y="34" class="label" fill="#fff">Order Handler</text>
+    <text x="20" y="56" class="sub" fill="#fff">Consumes OrderCreated → PaymentRequested</text>
+  </g>
+
+  <g transform="translate(520,300)" filter="url(#shadow)">
+    <rect x="0" y="0" rx="12" ry="12" width="300" height="80" fill="url(#gradWarn)"/>
+    <text x="20" y="34" class="label" fill="#fff">Payment Handler</text>
+    <text x="20" y="56" class="sub" fill="#fff">Processes payment → Success/Failure</text>
+  </g>
+
+  <g transform="translate(860,300)" filter="url(#shadow)">
+    <rect x="0" y="0" rx="12" ry="12" width="300" height="80" fill="url(#gradWarn)"/>
+    <text x="20" y="34" class="label" fill="#fff">Shipping Handler</text>
+    <text x="20" y="56" class="sub" fill="#fff">Completes shipping → Saga complete</text>
+  </g>
+
+  <g transform="translate(520,500)" filter="url(#shadow)">
+    <rect x="0" y="0" rx="12" ry="12" width="300" height="70" fill="url(#gradDanger)"/>
+    <text x="20" y="30" class="label" fill="#fff">Compensation</text>
+    <text x="20" y="52" class="sub" fill="#ffecec">Cancel order / rollback</text>
+  </g>
+
+  <g transform="translate(860,120)" filter="url(#shadow)">
+    <rect x="0" y="0" rx="12" ry="12" width="300" height="70" fill="url(#gradSuccess)"/>
+    <text x="20" y="30" class="label" fill="#fff">Saga Completed</text>
+    <text x="20" y="52" class="sub" fill="#e9fff5">Order fulfilled</text>
+  </g>
+
+  <g transform="translate(120,520)" filter="url(#shadow)">
+    <rect x="0" y="0" rx="12" ry="12" width="320" height="80" fill="url(#gradStore)"/>
+    <text x="20" y="34" class="label" fill="#fff">OrderSagaService + EF Core</text>
+    <text x="20" y="56" class="sub" fill="#f3eaff">SagaDbContext (state, idempotency)</text>
+  </g>
+
+  <path d="M340,165 H460" stroke="#4a4a4a" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
+  <path d="M600,210 V300" stroke="#4a4a4a" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
+  <path d="M480,340 H520" stroke="#4a4a4a" stroke-width="2.5" fill="none" marker-end="url(#arrow)"/>
+  <path d="M820,300 V220 H860" stroke="#0aa360" stroke-width="3" fill="none" marker-end="url(#arrowGreen)"/>
+  <text x="770" y="230" class="muted" fill="#0aa360">PaymentSucceeded</text>
+  <path d="M670,380 V500" stroke="#e53935" stroke-width="3" fill="none" marker-end="url(#arrowRed)"/>
+  <text x="680" y="460" class="muted" fill="#e53935">PaymentFailed</text>
+  <path d="M1010,300 V190" stroke="#0aa360" stroke-width="3" fill="none" marker-end="url(#arrowGreen)"/>
+  <text x="1016" y="265" class="muted" fill="#0aa360">ShippingCompleted</text>
+
+  <path d="M330,380 C260,420 240,450 240,520" stroke="#7e57c2" stroke-dasharray="6,6" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+  <path d="M670,380 C600,420 560,450 460,520" stroke="#7e57c2" stroke-dasharray="6,6" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+  <path d="M1010,380 C940,420 900,450 600,520" stroke="#7e57c2" stroke-dasharray="6,6" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+  <text x="136" y="616" class="muted">State updates, correlation, idempotency</text>
+
+  <text x="470" y="140" class="muted" fill="#eaf2ff">orders</text>
+  <text x="740" y="140" class="muted" fill="#eaf2ff">payments</text>
+</svg>

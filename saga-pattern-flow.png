@@ -1,0 +1,37 @@
+![Saga Pattern Flow](saga-pattern-flow.png)
+
+Below is a visual representation of the Saga Pattern flow implemented in this codebase:
+
+```
++-------------------+
+|   Order Created   |
++-------------------+
+          |
+          v
++-------------------+
+| Payment Requested |
++-------------------+
+          |
+   +------+------+
+   |             |
+   v             v
+Payment      Payment
+Success      Failure
+   |             |
+   v             v
++-------------------+   +-------------------+
+| Shipping Started  |   | Compensation Step |
++-------------------+   +-------------------+
+          |
+          v
++-------------------+
+| Saga Completed    |
++-------------------+
+```
+
+- Each step is coordinated via Azure Service Bus queues.
+- Compensation logic is triggered on payment failure.
+- Saga state is persisted in the database.
+- Handlers and commands manage transitions between steps.
+
+> See `OrderCommands`, `PaymentCommands`, `ShippingCommands`, and their handlers for implementation details.
