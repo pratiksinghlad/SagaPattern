@@ -15,13 +15,13 @@ public class PaymentSucceededHandler : ICommandHandler<PaymentSucceeded>
 {
     private readonly IOrderSagaService _sagaService;
     private readonly IServiceBusPublisher _publisher;
-    private readonly ServiceBusConfiguration _configuration;
+    private readonly AzureServiceBusConfiguration _configuration;
     private readonly ILogger<PaymentSucceededHandler> _logger;
 
     public PaymentSucceededHandler(
         IOrderSagaService sagaService,
         IServiceBusPublisher publisher,
-        ServiceBusConfiguration configuration,
+        AzureServiceBusConfiguration configuration,
         ILogger<PaymentSucceededHandler> logger)
     {
         _sagaService = sagaService ?? throw new ArgumentNullException(nameof(sagaService));
@@ -82,13 +82,13 @@ public class PaymentFailedHandler : ICommandHandler<PaymentFailed>
 {
     private readonly IOrderSagaService _sagaService;
     private readonly IServiceBusPublisher _publisher;
-    private readonly ServiceBusConfiguration _configuration;
+    private readonly AzureServiceBusConfiguration _configuration;
     private readonly ILogger<PaymentFailedHandler> _logger;
 
     public PaymentFailedHandler(
         IOrderSagaService sagaService,
         IServiceBusPublisher publisher,
-        ServiceBusConfiguration configuration,
+        AzureServiceBusConfiguration configuration,
         ILogger<PaymentFailedHandler> logger)
     {
         _sagaService = sagaService ?? throw new ArgumentNullException(nameof(sagaService));

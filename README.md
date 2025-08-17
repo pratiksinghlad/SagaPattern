@@ -58,9 +58,10 @@ SagaPatternDemo/
 ## 🛠️ Prerequisites
 
 - [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0)
-- [SQL Server LocalDB](https://docs.microsoft.com/en-us/sql/database-engine/configure-windows/sql-server-express-localdb) (included with Visual Studio)
 - Azure Service Bus namespace with Service Principal access
 - Azure subscription for Service Bus (or Azure Service Bus Emulator for local testing)
+
+**Database**: No separate database installation required - uses SQLite with SQLCipher encryption (embedded database)
 
 ## ⚙️ Configuration
 
@@ -89,7 +90,9 @@ Update `appsettings.json` with your Azure Service Bus details:
     "MaxConcurrentCalls": 1
   },
   "Database": {
-    "ConnectionString": "Server=(localdb)\\mssqllocaldb;Database=SagaPatternDemo;Trusted_Connection=true;MultipleActiveResultSets=true"
+    "ConnectionString": "Data Source=SagaPatternDemo.db;Password=your-strong-password-here",
+    "LoginId": "saga_admin",
+    "Password": "your-strong-password-here"
   }
 }
 ```
@@ -98,7 +101,7 @@ Update `appsettings.json` with your Azure Service Bus details:
 
 ### 3. Database Setup
 
-The application uses Entity Framework Core with SQL Server LocalDB. The database will be created automatically on first run, or you can create it manually:
+The application uses Entity Framework Core with **SQLite and SQLCipher encryption**. The database will be created automatically on first run, or you can create it manually:
 
 ```bash
 # Navigate to the Host project directory
@@ -107,6 +110,13 @@ cd SagaPatternDemo.Host
 # Create/update database with migrations
 dotnet ef database update
 ```
+
+**Database Features:**
+- **SQLite**: Lightweight, file-based database
+- **SQLCipher**: AES-256 encryption for data at rest
+- **Password Protection**: Secure database access with encryption password
+
+> **Security Note**: See [SQLITE_SETUP.md](./SQLITE_SETUP.md) for detailed SQLCipher configuration and security best practices.
 
 ## 🚀 Running the Application
 

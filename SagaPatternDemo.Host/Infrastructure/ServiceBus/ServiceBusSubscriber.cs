@@ -1,5 +1,5 @@
-using Azure.Identity;
 using Azure.Messaging.ServiceBus;
+using Azure.Messaging.ServiceBus.Administration;
 using Microsoft.Extensions.Logging;
 using SagaPatternDemo.Host.Infrastructure.Messaging;
 using SagaPatternDemo.Host.Shared.Commands;
@@ -35,14 +35,16 @@ public interface IServiceBusSubscriber
 public class ServiceBusSubscriber : IServiceBusSubscriber, IAsyncDisposable
 {
     private readonly ServiceBusClient _client;
+    private readonly ServiceBusAdministrationClient _adminClient;
     private readonly IJsonSerializerProvider _jsonSerializer;
     private readonly ICommandDispatcher _commandDispatcher;
     private readonly ILogger<ServiceBusSubscriber> _logger;
-    private readonly ServiceBusConfiguration _configuration;
+    private readonly AzureServiceBusConfiguration _configuration;
     private readonly Dictionary<string, ServiceBusProcessor> _processors;
+    private readonly HashSet<string> _createdQueues;
 
     public ServiceBusSubscriber(
-        ServiceBusConfiguration configuration,
+        AzureServiceBusConfiguration configuration,
         IJsonSerializerProvider jsonSerializer,
         ICommandDispatcher commandDispatcher,
         ILogger<ServiceBusSubscriber> logger)
@@ -52,18 +54,11 @@ public class ServiceBusSubscriber : IServiceBusSubscriber, IAsyncDisposable
         _commandDispatcher = commandDispatcher ?? throw new ArgumentNullException(nameof(commandDispatcher));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        // Create Service Bus client with Service Principal authentication
-        var credential = new ClientSecretCredential(
-            configuration.TenantId,
-            configuration.ClientId,
-            configuration.ClientSecret);
-
-        var fullyQualifiedNamespace = configuration.Namespace.Contains(".servicebus.windows.net")
-            ? configuration.Namespace
-            : $"{configuration.Namespace}.servicebus.windows.net";
-
-        _client = new ServiceBusClient(fullyQualifiedNamespace, credential);
+        // Create Service Bus client with connection string
+        _client = new ServiceBusClient(configuration.ConnectionString);
+        _adminClient = new ServiceBusAdministrationClient(configuration.ConnectionString);
         _processors = new Dictionary<string, ServiceBusProcessor>();
+        _createdQueues = new HashSet<string>();
     }
 
     public async Task StartProcessingAsync(string queueName, CancellationToken cancellationToken = default)
@@ -73,6 +68,9 @@ public class ServiceBusSubscriber : IServiceBusSubscriber, IAsyncDisposable
 
         try
         {
+            // Ensure queue exists before creating processor
+            await EnsureQueueExistsAsync(queueName);
+            
             var processor = GetProcessor(queueName);
             
             processor.ProcessMessageAsync += ProcessMessageAsync;
@@ -120,6 +118,40 @@ public class ServiceBusSubscriber : IServiceBusSubscriber, IAsyncDisposable
             _processors[queueName] = processor;
         }
         return processor;
+    }
+
+    private async Task EnsureQueueExistsAsync(string queueName)
+    {
+        if (_createdQueues.Contains(queueName))
+            return; // Already checked/created this queue
+
+        try
+        {
+            // Check if queue exists
+            bool queueExists = await _adminClient.QueueExistsAsync(queueName);
+            
+            if (!queueExists)
+            {
+                _logger.LogInformation("Creating queue: {QueueName}", queueName);
+                
+                // Create queue with basic tier compatible options
+                var queueOptions = new CreateQueueOptions(queueName)
+                {
+                    DefaultMessageTimeToLive = TimeSpan.FromDays(14), // Messages expire after 14 days
+                    MaxDeliveryCount = 10,
+                };
+
+                await _adminClient.CreateQueueAsync(queueOptions);
+                _logger.LogInformation("Successfully created queue: {QueueName}", queueName);
+            }
+            
+            _createdQueues.Add(queueName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to ensure queue exists: {QueueName}", queueName);
+            throw;
+        }
     }
 
     private async Task ProcessMessageAsync(ProcessMessageEventArgs args)

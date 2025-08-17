@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace SagaPatternDemo.Host.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class InitialSQLiteCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -15,14 +15,14 @@ namespace SagaPatternDemo.Host.Migrations
                 name: "OrderSagas",
                 columns: table => new
                 {
-                    OrderId = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
-                    Amount = table.Column<decimal>(type: "decimal(18,2)", precision: 18, scale: 2, nullable: false),
-                    State = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    PaymentProcessed = table.Column<bool>(type: "bit", nullable: false),
-                    ShippingProcessed = table.Column<bool>(type: "bit", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    ErrorMessage = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: true)
+                    OrderId = table.Column<string>(type: "TEXT", maxLength: 100, nullable: false),
+                    Amount = table.Column<decimal>(type: "TEXT", precision: 18, scale: 2, nullable: false),
+                    State = table.Column<string>(type: "TEXT", nullable: false),
+                    PaymentProcessed = table.Column<bool>(type: "INTEGER", nullable: false),
+                    ShippingProcessed = table.Column<bool>(type: "INTEGER", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "TEXT", nullable: false),
+                    ErrorMessage = table.Column<string>(type: "TEXT", maxLength: 1000, nullable: true)
                 },
                 constraints: table =>
                 {

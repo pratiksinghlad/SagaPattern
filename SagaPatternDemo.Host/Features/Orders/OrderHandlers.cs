@@ -14,13 +14,13 @@ public class OrderCreatedHandler : ICommandHandler<OrderCreated>
 {
     private readonly IOrderSagaService _sagaService;
     private readonly IServiceBusPublisher _publisher;
-    private readonly ServiceBusConfiguration _configuration;
+    private readonly AzureServiceBusConfiguration _configuration;
     private readonly ILogger<OrderCreatedHandler> _logger;
 
     public OrderCreatedHandler(
         IOrderSagaService sagaService,
         IServiceBusPublisher publisher,
-        ServiceBusConfiguration configuration,
+        AzureServiceBusConfiguration configuration,
         ILogger<OrderCreatedHandler> logger)
     {
         _sagaService = sagaService ?? throw new ArgumentNullException(nameof(sagaService));

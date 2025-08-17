@@ -34,12 +34,12 @@ public interface IOrderCommandSender
 public class OrderCommandSender : IOrderCommandSender
 {
     private readonly IServiceBusPublisher _publisher;
-    private readonly ServiceBusConfiguration _configuration;
+    private readonly AzureServiceBusConfiguration _configuration;
     private readonly ILogger<OrderCommandSender> _logger;
 
     public OrderCommandSender(
         IServiceBusPublisher publisher,
-        ServiceBusConfiguration configuration,
+        AzureServiceBusConfiguration configuration,
         ILogger<OrderCommandSender> logger)
     {
         _publisher = publisher ?? throw new ArgumentNullException(nameof(publisher));

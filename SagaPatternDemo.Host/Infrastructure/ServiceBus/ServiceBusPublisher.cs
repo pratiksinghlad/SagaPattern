@@ -1,5 +1,5 @@
-using Azure.Identity;
 using Azure.Messaging.ServiceBus;
+using Azure.Messaging.ServiceBus.Administration;
 using Microsoft.Extensions.Logging;
 using SagaPatternDemo.Host.Infrastructure.Messaging;
 using SagaPatternDemo.Host.Shared.Commands;
@@ -30,12 +30,14 @@ public interface IServiceBusPublisher
 public class ServiceBusPublisher : IServiceBusPublisher, IAsyncDisposable
 {
     private readonly ServiceBusClient _client;
+    private readonly ServiceBusAdministrationClient _adminClient;
     private readonly IJsonSerializerProvider _jsonSerializer;
     private readonly ILogger<ServiceBusPublisher> _logger;
     private readonly Dictionary<string, ServiceBusSender> _senders;
+    private readonly HashSet<string> _createdQueues;
 
     public ServiceBusPublisher(
-        ServiceBusConfiguration configuration,
+        AzureServiceBusConfiguration configuration,
         IJsonSerializerProvider jsonSerializer,
         ILogger<ServiceBusPublisher> logger)
     {
@@ -45,18 +47,11 @@ public class ServiceBusPublisher : IServiceBusPublisher, IAsyncDisposable
         _jsonSerializer = jsonSerializer ?? throw new ArgumentNullException(nameof(jsonSerializer));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        // Create Service Bus client with Service Principal authentication
-        var credential = new ClientSecretCredential(
-            configuration.TenantId,
-            configuration.ClientId,
-            configuration.ClientSecret);
-
-        var fullyQualifiedNamespace = configuration.Namespace.Contains(".servicebus.windows.net")
-            ? configuration.Namespace
-            : $"{configuration.Namespace}.servicebus.windows.net";
-
-        _client = new ServiceBusClient(fullyQualifiedNamespace, credential);
+        // Create Service Bus client with connection string
+        _client = new ServiceBusClient(configuration.ConnectionString);
+        _adminClient = new ServiceBusAdministrationClient(configuration.ConnectionString);
         _senders = new Dictionary<string, ServiceBusSender>();
+        _createdQueues = new HashSet<string>();
     }
 
     public async Task PublishAsync<TCommand>(TCommand command, string queueName, CancellationToken cancellationToken = default)
@@ -73,7 +68,7 @@ public class ServiceBusPublisher : IServiceBusPublisher, IAsyncDisposable
             using var scope = _logger.BeginScope("Publishing message {MessageType} to {QueueName} for OrderId {OrderId}",
                 command.MessageType, queueName, command.CorrelationId);
 
-            var sender = GetSender(queueName);
+            var sender = await GetSenderAsync(queueName);
             var messageBody = _jsonSerializer.Serialize(command);
 
             var serviceBusMessage = new ServiceBusMessage(messageBody)
@@ -101,14 +96,51 @@ public class ServiceBusPublisher : IServiceBusPublisher, IAsyncDisposable
         }
     }
 
-    private ServiceBusSender GetSender(string queueName)
+    private async Task<ServiceBusSender> GetSenderAsync(string queueName)
     {
+        // Ensure queue exists before creating sender
+        await EnsureQueueExistsAsync(queueName);
+
         if (!_senders.TryGetValue(queueName, out var sender))
         {
             sender = _client.CreateSender(queueName);
             _senders[queueName] = sender;
         }
         return sender;
+    }
+
+    private async Task EnsureQueueExistsAsync(string queueName)
+    {
+        if (_createdQueues.Contains(queueName))
+            return; // Already checked/created this queue
+
+        try
+        {
+            // Check if queue exists
+            bool queueExists = await _adminClient.QueueExistsAsync(queueName);
+            
+            if (!queueExists)
+            {
+                _logger.LogInformation("Creating queue: {QueueName}", queueName);
+                
+                // Create queue with basic tier compatible options
+                var queueOptions = new CreateQueueOptions(queueName)
+                {
+                    DefaultMessageTimeToLive = TimeSpan.FromDays(14), // Messages expire after 14 days
+                    MaxDeliveryCount = 10,
+                };
+
+                await _adminClient.CreateQueueAsync(queueOptions);
+                _logger.LogInformation("Successfully created queue: {QueueName}", queueName);
+            }
+            
+            _createdQueues.Add(queueName);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to ensure queue exists: {QueueName}", queueName);
+            throw;
+        }
     }
 
     public async ValueTask DisposeAsync()

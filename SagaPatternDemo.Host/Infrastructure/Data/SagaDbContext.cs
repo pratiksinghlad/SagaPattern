@@ -4,7 +4,7 @@ using SagaPatternDemo.Host.Shared.Models;
 namespace SagaPatternDemo.Host.Infrastructure.Data;
 
 /// <summary>
-/// Entity Framework DbContext for saga persistence
+/// Entity Framework DbContext for saga persistence with SQLite and SQLCipher encryption
 /// </summary>
 public class SagaDbContext : DbContext
 {

@@ -11,6 +11,7 @@ using SagaPatternDemo.Host.Infrastructure.Messaging;
 using SagaPatternDemo.Host.Infrastructure.ServiceBus;
 using SagaPatternDemo.Host.Shared.Configuration;
 using SagaPatternDemo.Host.Shared.Handlers;
+using System.Linq;
 
 namespace SagaPatternDemo.Host;
 
@@ -46,10 +47,10 @@ public class Program
             })
             .ConfigureServices((context, services) =>
             {
-                // Configuration
-                var serviceBusConfig = new ServiceBusConfiguration();
-                context.Configuration.GetSection(ServiceBusConfiguration.SectionName).Bind(serviceBusConfig);
-                services.AddSingleton(serviceBusConfig);
+                // Configuration - Azure Service Bus configuration using ConnectionStrings
+                var azureServiceBusConfig = new AzureServiceBusConfiguration();
+                context.Configuration.GetSection("ConnectionStrings:Asb").Bind(azureServiceBusConfig);
+                services.AddSingleton(azureServiceBusConfig);
 
                 var databaseConfig = new DatabaseConfiguration();
                 context.Configuration.GetSection(DatabaseConfiguration.SectionName).Bind(databaseConfig);
@@ -57,7 +58,19 @@ public class Program
 
                 // Database
                 services.AddDbContext<SagaDbContext>(options =>
-                    options.UseSqlServer(databaseConfig.ConnectionString));
+                {
+                    // Extract data source from connection string
+                    var connectionStringParts = databaseConfig.ConnectionString.Split(';');
+                    var dataSourcePart = connectionStringParts.FirstOrDefault(p => p.Trim().StartsWith("Data Source=", StringComparison.OrdinalIgnoreCase));
+                    var dataSource = dataSourcePart?.Split('=')[1] ?? "SagaPatternDemo.db";
+                    
+                    // Build connection string with SQLCipher password
+                    var connectionString = SqlCipherExtensions.BuildSqlCipherConnectionString(
+                        dataSource: dataSource,
+                        password: databaseConfig.Password);
+                    
+                    options.UseSqlCipher(connectionString);
+                });
 
                 // Infrastructure services
                 services.AddSingleton<IJsonSerializerProvider, JsonSerializerProvider>();

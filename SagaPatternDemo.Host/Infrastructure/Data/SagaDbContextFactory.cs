@@ -12,8 +12,12 @@ public class SagaDbContextFactory : IDesignTimeDbContextFactory<SagaDbContext>
     {
         var optionsBuilder = new DbContextOptionsBuilder<SagaDbContext>();
         
-        // Use LocalDB connection string for migrations
-        optionsBuilder.UseSqlServer("Server=(localdb)\\mssqllocaldb;Database=SagaPatternDemo;Trusted_Connection=true;MultipleActiveResultSets=true");
+        // Use SQLCipher with default password for migrations
+        var connectionString = SqlCipherExtensions.BuildSqlCipherConnectionString(
+            dataSource: "SagaPatternDemo.db",
+            password: "your-strong-password-here");
+            
+        optionsBuilder.UseSqlCipher(connectionString);
 
         return new SagaDbContext(optionsBuilder.Options);
     }

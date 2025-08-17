@@ -11,12 +11,12 @@ namespace SagaPatternDemo.Host.Infrastructure.ServiceBus;
 public class ServiceBusBackgroundService : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
-    private readonly ServiceBusConfiguration _configuration;
+    private readonly AzureServiceBusConfiguration _configuration;
     private readonly ILogger<ServiceBusBackgroundService> _logger;
 
     public ServiceBusBackgroundService(
         IServiceProvider serviceProvider,
-        ServiceBusConfiguration configuration,
+        AzureServiceBusConfiguration configuration,
         ILogger<ServiceBusBackgroundService> logger)
     {
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));

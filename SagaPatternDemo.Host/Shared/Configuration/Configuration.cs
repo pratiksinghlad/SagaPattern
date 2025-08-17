@@ -1,41 +1,41 @@
 namespace SagaPatternDemo.Host.Shared.Configuration;
 
 /// <summary>
-/// Configuration settings for Azure Service Bus
+/// Configuration settings for Azure Service Bus using ConnectionStrings
 /// </summary>
-public class ServiceBusConfiguration
+public class AzureServiceBusConfiguration
 {
-    public const string SectionName = "ServiceBus";
+    public const string SectionName = "ConnectionStrings:Asb";
 
     /// <summary>
-    /// Service Bus namespace (e.g., your-namespace.servicebus.windows.net)
+    /// Service Bus connection URL with endpoint and authentication
     /// </summary>
-    public string Namespace { get; set; } = string.Empty;
+    public string Url { get; set; } = string.Empty;
 
     /// <summary>
-    /// Azure tenant ID for Service Principal authentication
+    /// Shared Access Key for Service Bus authentication
     /// </summary>
-    public string TenantId { get; set; } = string.Empty;
+    public string SharedAccessKey { get; set; } = string.Empty;
 
     /// <summary>
-    /// Azure client ID for Service Principal authentication
+    /// Prefix for queue/topic names
     /// </summary>
-    public string ClientId { get; set; } = string.Empty;
+    public string Prefix { get; set; } = string.Empty;
 
     /// <summary>
-    /// Azure client secret for Service Principal authentication
+    /// Gets the full connection string by combining URL and SharedAccessKey
     /// </summary>
-    public string ClientSecret { get; set; } = string.Empty;
+    public string ConnectionString => $"{Url}{SharedAccessKey}";
 
     /// <summary>
-    /// Queue/topic name for order events
+    /// Queue/topic name for order events (with prefix)
     /// </summary>
-    public string OrdersQueue { get; set; } = "orders";
+    public string OrdersQueue => $"orders"; //{Prefix}-
 
     /// <summary>
-    /// Queue/topic name for payment events
+    /// Queue/topic name for payment events (with prefix)
     /// </summary>
-    public string PaymentsQueue { get; set; } = "payments";
+    public string PaymentsQueue => $"payments";
 
     /// <summary>
     /// Maximum number of concurrent calls for message processing
@@ -51,7 +51,17 @@ public class DatabaseConfiguration
     public const string SectionName = "Database";
 
     /// <summary>
-    /// Connection string for the database
+    /// Connection string for the SQLite database
     /// </summary>
     public string ConnectionString { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Database login ID (for reference/audit purposes)
+    /// </summary>
+    public string LoginId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Database password for SQLCipher encryption
+    /// </summary>
+    public string Password { get; set; } = string.Empty;
 }
